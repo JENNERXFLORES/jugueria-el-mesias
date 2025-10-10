@@ -8,6 +8,8 @@ abstract class BaseController {
     protected $db;
     protected $table;
     protected $primaryKey = 'id';
+    protected $createdAtField = 'created_at';
+    protected $updatedAtField = 'updated_at';
     
     public function __construct($database) {
         $this->db = $database;
@@ -107,7 +109,7 @@ abstract class BaseController {
             }
             
             // Agregar timestamps
-            $data = $this->db->prepareInsertData($data);
+            $data = $this->db->prepareInsertData($data, true, $this->getTimestampFields());
             
             // Construir query de inserción
             $fields = array_keys($data);
@@ -142,7 +144,7 @@ abstract class BaseController {
             
             // Preparar datos
             $data = $this->beforeUpdate($data, $existing);
-            $data = $this->db->prepareUpdateData($data);
+            $data = $this->db->prepareUpdateData($data, $this->getTimestampFields());
             
             // Asegurar que el ID no se modifique
             unset($data[$this->primaryKey]);
@@ -185,7 +187,7 @@ abstract class BaseController {
             
             // Preparar datos
             $data = $this->beforeUpdate($data, $existing);
-            $data = $this->db->prepareUpdateData($data);
+            $data = $this->db->prepareUpdateData($data, $this->getTimestampFields());
             
             // Asegurar que el ID no se modifique
             unset($data[$this->primaryKey]);
@@ -344,6 +346,13 @@ abstract class BaseController {
         } catch (Exception $e) {
             return [];
         }
+    }
+
+    protected function getTimestampFields() {
+        return [
+            'created' => $this->createdAtField,
+            'updated' => $this->updatedAtField
+        ];
     }
 }
 ?>

@@ -17,6 +17,8 @@ class PromocionesController extends BaseController {
     public function __construct($database) {
         parent::__construct($database);
         $this->table = 'promociones';
+        $this->createdAtField = 'fecha_creacion';
+        $this->updatedAtField = null;
     }
     
     protected function validateData($data, $operation) {
@@ -313,12 +315,19 @@ class PromocionesController extends BaseController {
             $promocion = $this->getById($id);
             $newStatus = !$promocion['activa'];
             
-            $query = "UPDATE {$this->table} SET activa = :activa, updated_at = NOW() WHERE id = :id";
-            
-            $this->db->update($query, [
+            $setClause = 'activa = :activa';
+            $params = [
                 'id' => $id,
                 'activa' => $newStatus ? 1 : 0
-            ]);
+            ];
+
+            if (!empty($this->updatedAtField)) {
+                $setClause .= ", {$this->updatedAtField} = NOW()";
+            }
+
+            $query = "UPDATE {$this->table} SET {$setClause} WHERE id = :id";
+
+            $this->db->update($query, $params);
             
             return $this->getById($id);
             

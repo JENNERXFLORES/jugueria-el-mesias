@@ -200,20 +200,37 @@ class Database {
     /**
      * Preparar datos para inserción con timestamps
      */
-    public function prepareInsertData($data, $includeTimestamps = true) {
+    public function prepareInsertData($data, $includeTimestamps = true, $timestampFields = null) {
         if ($includeTimestamps) {
-            $data['created_at'] = date('Y-m-d H:i:s');
-            $data['updated_at'] = date('Y-m-d H:i:s');
+            $timestampFields = $timestampFields ?? [];
+            $createdField = $timestampFields['created'] ?? 'created_at';
+            $updatedField = $timestampFields['updated'] ?? 'updated_at';
+
+            $now = date('Y-m-d H:i:s');
+
+            if (!empty($createdField)) {
+                $data[$createdField] = $now;
+            }
+
+            if (!empty($updatedField)) {
+                $data[$updatedField] = $now;
+            }
         }
-        
+
         return $data;
     }
-    
+
     /**
      * Preparar datos para actualización con timestamp
      */
-    public function prepareUpdateData($data) {
-        $data['updated_at'] = date('Y-m-d H:i:s');
+    public function prepareUpdateData($data, $timestampFields = null) {
+        $timestampFields = $timestampFields ?? [];
+        $updatedField = $timestampFields['updated'] ?? 'updated_at';
+
+        if (!empty($updatedField)) {
+            $data[$updatedField] = date('Y-m-d H:i:s');
+        }
+
         return $data;
     }
     
