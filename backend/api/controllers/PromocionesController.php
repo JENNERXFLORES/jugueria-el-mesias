@@ -6,6 +6,13 @@
 require_once 'BaseController.php';
 
 class PromocionesController extends BaseController {
+    /**
+     * IDs de productos que deben asociarse a la promoción después
+     * de crearla o actualizarla.
+     *
+     * @var array|null
+     */
+    private $pendingProductosAplicables = null;
     
     public function __construct($database) {
         parent::__construct($database);
@@ -87,6 +94,7 @@ class PromocionesController extends BaseController {
     }
     
     protected function beforeCreate($data) {
+        $this->extractProductosAplicables($data);
         $data = parent::beforeCreate($data);
         
         // Establecer valores por defecto
@@ -97,6 +105,7 @@ class PromocionesController extends BaseController {
     }
     
     protected function beforeUpdate($data, $existing) {
+        $this->extractProductosAplicables($data);
         $data = parent::beforeUpdate($data, $existing);
         
         // Si se actualiza el tipo, verificar valor de descuento
@@ -180,10 +189,82 @@ class PromocionesController extends BaseController {
             $promocion['proximamente'] = $promocion['activa'] && $ahora < $fechaInicio;
             $promocion['expirada'] = $ahora > $fechaFin;
         }
-        
+
         return $data;
     }
-    
+
+    protected function afterCreate($record) {
+        try {
+            $record = parent::afterCreate($record);
+
+            if (is_array($this->pendingProductosAplicables)) {
+                $this->addProducts($record['id'], $this->pendingProductosAplicables);
+                $record = $this->getPromocionWithProducts($record['id']);
+            }
+
+            return $record;
+        } finally {
+            $this->pendingProductosAplicables = null;
+        }
+    }
+
+    protected function afterUpdate($record, $previous) {
+        try {
+            $record = parent::afterUpdate($record, $previous);
+
+            if (is_array($this->pendingProductosAplicables)) {
+                $this->addProducts($record['id'], $this->pendingProductosAplicables);
+                $record = $this->getPromocionWithProducts($record['id']);
+            }
+
+            return $record;
+        } finally {
+            $this->pendingProductosAplicables = null;
+        }
+    }
+
+    /**
+     * Procesa el payload recibido para extraer el listado de productos
+     * aplicables a la promoción.
+     */
+    private function extractProductosAplicables(&$data) {
+        if (!array_key_exists('productos_aplicables', $data)) {
+            $this->pendingProductosAplicables = null;
+            return;
+        }
+
+        $productos = $data['productos_aplicables'];
+
+        if (is_string($productos)) {
+            $decoded = json_decode($productos, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $productos = $decoded;
+            }
+        }
+
+        if ($productos === null || $productos === '') {
+            $productos = [];
+        }
+
+        if (!is_array($productos)) {
+            throw new Exception('El campo productos_aplicables debe ser un arreglo de IDs de productos');
+        }
+
+        $productosLimpios = [];
+        foreach ($productos as $productoId) {
+            if (is_string($productoId) || is_numeric($productoId)) {
+                $productoId = trim((string)$productoId);
+                if ($productoId !== '') {
+                    $productosLimpios[] = $this->db->sanitizeInput($productoId);
+                }
+            }
+        }
+
+        $this->pendingProductosAplicables = array_values(array_unique($productosLimpios));
+
+        unset($data['productos_aplicables']);
+    }
+
     /**
      * Obtener promociones vigentes
      */
