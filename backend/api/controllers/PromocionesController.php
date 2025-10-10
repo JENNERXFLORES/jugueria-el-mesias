@@ -18,7 +18,10 @@ class PromocionesController extends BaseController {
         parent::__construct($database);
         $this->table = 'promociones';
         $this->createdAtField = 'fecha_creacion';
-        $this->updatedAtField = null;
+        // Esta tabla no cuenta con una columna de actualización automática.
+        // Usamos cadena vacía para evitar que el BaseController intente
+        // utilizar el valor por defecto "updated_at".
+        $this->updatedAtField = '';
     }
     
     protected function validateData($data, $operation) {
