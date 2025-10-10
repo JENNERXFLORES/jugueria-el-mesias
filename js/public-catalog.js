@@ -579,6 +579,19 @@ async function createDemoProducts() {
 
 // Create Demo Promotions
 async function createDemoPromotions() {
+    const getPromotionPeriod = (durationInDays) => {
+        const start = new Date();
+        const end = new Date(start.getTime() + durationInDays * 24 * 60 * 60 * 1000);
+
+        return {
+            start: Utils.formatDateTimeForApi(start),
+            end: Utils.formatDateTimeForApi(end)
+        };
+    };
+
+    const firstPromotionPeriod = getPromotionPeriod(30);
+    const secondPromotionPeriod = getPromotionPeriod(15);
+
     const demoPromotions = [
         {
             titulo: '¡2x1 en Jugos Naturales!',
@@ -586,8 +599,8 @@ async function createDemoPromotions() {
             tipo: '2x1',
             valor_descuento: 0,
             productos_aplicables: [],
-            fecha_inicio: Date.now(),
-            fecha_fin: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 days
+            fecha_inicio: firstPromotionPeriod.start,
+            fecha_fin: firstPromotionPeriod.end,
             activa: true,
             imagen_url: 'https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=800&h=400&fit=crop'
         },
@@ -597,8 +610,8 @@ async function createDemoPromotions() {
             tipo: 'descuento_porcentaje',
             valor_descuento: 20,
             productos_aplicables: [],
-            fecha_inicio: Date.now(),
-            fecha_fin: Date.now() + (15 * 24 * 60 * 60 * 1000), // 15 days
+            fecha_inicio: secondPromotionPeriod.start,
+            fecha_fin: secondPromotionPeriod.end,
             activa: true,
             imagen_url: 'https://images.unsplash.com/photo-1551997070-8b7c0d637ee8?w=800&h=400&fit=crop'
         }
